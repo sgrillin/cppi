@@ -1,5 +1,6 @@
 library(quantmod)
 library(ggplot2)
+library(PerformanceAnalytics)
 
 getSymbols("BTC-USD", from = "2020-01-06", to = Sys.Date(), auto.assign = TRUE)
 
@@ -88,9 +89,14 @@ bh_avol_st <- bh_vol_st*sqrt(12)
 bitcoin_avol_st <- bitcoin_vol_st*sqrt(12)
 
 # Sharpe Ratios
-cppi_sr_st <- (cppi_aret_st-0.02)/cppi_avol_st
-bh_sr_st <- (bh_aret_st-0.02)/bh_avol_st
-bitcoin_sr_st <- (bitcoin_aret_st-0.02)/bitcoin_avol_st
+cppi_sr_st <- (cppi_aret_st-r)/cppi_avol_st
+bh_sr_st <- (bh_aret_st-r)/bh_avol_st
+bitcoin_sr_st <- (bitcoin_aret_st-r)/bitcoin_avol_st
+
+# Drawdown
+btc_dd <- min(Drawdowns(btc_monthly_returns))
+bh_dd <- min(Drawdowns(0.6*btc_monthly_returns + 0.4*risk_free_rate))
+cppi_dd_st <- min(Drawdowns(risky_weight*btc_monthly_returns + safe_weight*risk_free_rate))
 
 
 # Dynamic Floor: step wise update of the floor
@@ -139,10 +145,10 @@ cppi_vol_dyn <- sd(risky_weight*btc_monthly_returns + safe_weight*risk_free_rate
 cppi_avol_dyn <- cppi_vol_dyn*sqrt(12)
 
 # Sharpe Ratios
-cppi_sr_dyn <- (cppi_aret_dyn-0.02)/cppi_avol_dyn
+cppi_sr_dyn <- (cppi_aret_dyn-r)/cppi_avol_dyn
 
-# Add Drawdown 
-min(PerformanceAnalytics::Drawdowns(btc_monthly_returns))
+# Drawdown 
+cppi_dd_dyn <- min(Drawdowns(risky_weight*btc_monthly_returns + safe_weight*risk_free_rate))
 
 summary <- c(bitcoin_aret_st, bitcoin_avol_st, bitcoin_sr_st, bh_aret_st, bh_avol_st, bh_sr_st, cppi_aret_st, cppi_avol_st, cppi_sr_st, cppi_aret_dyn, cppi_avol_dyn, cppi_sr_dyn)
 summary <- matrix(summary, nrow=3,ncol=4,byrow=FALSE, dimnames=list(c("Average return","Annualised Vol","Sharpe Ratio"), c("Bitcoin", "Buy-and-hold", "CPPI Static Floor", "CPPI Dynamic Floor")))
